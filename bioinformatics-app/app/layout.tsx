@@ -17,6 +17,9 @@ export const metadata: Metadata = {
   ],
   authors: [{ name: "BioGenome Analytics" }],
   metadataBase: new URL("https://biogenome-analytics.com"),
+  icons: {
+    icon: "/favicon.svg",
+  },
   openGraph: {
     title: "BioGenome Analytics | Professional Sequence Analysis Suite",
     description:

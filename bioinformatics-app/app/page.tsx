@@ -213,6 +213,27 @@ export default function BioGenomeAnalytics() {
   const [isLoading, setIsLoading] = useState(false);
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [analysisMode, setAnalysisMode] = useState<"fast" | "accurate">("fast");
+
+  // Handle mode change - clear results when switching modes
+  const handleModeChange = (mode: "fast" | "accurate") => {
+    setAnalysisMode(mode);
+    setData(null); // Clear results when switching modes
+
+    // Force basic analysis when switching to fast mode
+    if (mode === "fast" && analysisType === "restriction") {
+      setAnalysisType("basic");
+      addToast(
+        "Switched to Fast mode - Restriction analysis requires Accurate mode",
+        "info",
+      );
+    } else {
+      addToast(
+        `Switched to ${mode === "fast" ? "Fast" : "Accurate"} mode`,
+        "info",
+      );
+    }
+  };
 
   // Toast management
   const addToast = useCallback(
@@ -262,6 +283,14 @@ export default function BioGenomeAnalytics() {
     );
   };
 
+  const selectAllEnzymes = () => {
+    setSelectedEnzymes([...availableEnzymes]);
+  };
+
+  const clearSelectedEnzymes = () => {
+    setSelectedEnzymes([]);
+  };
+
   const clearAll = () => {
     setSequence("");
     setSelectedEnzymes([]);
@@ -272,7 +301,12 @@ export default function BioGenomeAnalytics() {
   const getAnalysisData = async () => {
     if (analysisType === "basic") {
       if (!sequence) return null;
-      const response = await fetch("/api/analyze", {
+
+      // Use different endpoints based on analysis mode
+      const endpoint =
+        analysisMode === "fast" ? "/api/analyze" : "/api/analyze/accurate";
+
+      const response = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ sequence, type: sequenceType }),
@@ -280,7 +314,14 @@ export default function BioGenomeAnalytics() {
       return response.json();
     } else if (analysisType === "restriction") {
       if (!sequence) return null;
-      const response = await fetch("/api/analyze/restriction", {
+
+      // Use different endpoints based on analysis mode
+      const endpoint =
+        analysisMode === "fast"
+          ? "/api/analyze/restriction"
+          : "/api/analyze/restriction/accurate";
+
+      const response = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ sequence, enzymes: selectedEnzymes }),
@@ -468,10 +509,48 @@ export default function BioGenomeAnalytics() {
           {/* Input Panel */}
           <div className="lg:col-span-4 xl:col-span-3 space-y-6">
             <div className="glass-card p-6 sticky top-24">
+              {/* Analysis Speed Mode */}
+              <div className="mb-6">
+                <label className="text-xs font-semibold text-white/40 uppercase tracking-wider mb-3 block">
+                  Processing Mode
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    onClick={() => handleModeChange("fast")}
+                    className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border transition-all duration-300 ${
+                      analysisMode === "fast"
+                        ? "bg-emerald-500/20 border-emerald-500/50 text-white"
+                        : "bg-white/5 border-white/10 text-white/60 hover:border-white/20 hover:bg-white/10"
+                    }`}
+                  >
+                    <Zap className="w-4 h-4" />
+                    <span className="text-xs font-medium">Fast (JS)</span>
+                  </button>
+                  <button
+                    onClick={() => handleModeChange("accurate")}
+                    className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border transition-all duration-300 ${
+                      analysisMode === "accurate"
+                        ? "bg-indigo-500/20 border-indigo-500/50 text-white"
+                        : "bg-white/5 border-white/10 text-white/60 hover:border-white/20 hover:bg-white/10"
+                    }`}
+                  >
+                    <Microscope className="w-4 h-4" />
+                    <span className="text-xs font-medium">
+                      Accurate (Python)
+                    </span>
+                  </button>
+                </div>
+                <p className="text-[10px] text-white/30 mt-2 text-center">
+                  {analysisMode === "fast"
+                    ? "⚡ Next.js serverless - instant results"
+                    : "🔬 Python Biopython - production-grade accuracy"}
+                </p>
+              </div>
+
               {/* Analysis Type Selection */}
               <div className="mb-6">
                 <label className="text-xs font-semibold text-white/40 uppercase tracking-wider mb-3 block">
-                  Analysis Mode
+                  Analysis Type
                 </label>
                 <div className="grid grid-cols-2 gap-2">
                   <button
@@ -486,17 +565,37 @@ export default function BioGenomeAnalytics() {
                     <span className="text-sm font-medium">Basic</span>
                   </button>
                   <button
-                    onClick={() => setAnalysisType("restriction")}
+                    onClick={() => {
+                      if (analysisMode === "fast") {
+                        addToast(
+                          "Restriction analysis requires Accurate mode",
+                          "info",
+                        );
+                        handleModeChange("accurate");
+                        return;
+                      }
+                      setAnalysisType("restriction");
+                    }}
                     className={`flex flex-col items-center gap-2 p-4 rounded-xl border transition-all duration-300 ${
                       analysisType === "restriction"
                         ? "bg-indigo-500/20 border-indigo-500/50 text-white"
                         : "bg-white/5 border-white/10 text-white/60 hover:border-white/20 hover:bg-white/10"
-                    }`}
+                    } ${analysisMode === "fast" ? "opacity-50 cursor-not-allowed" : ""}`}
                   >
                     <Scissors className="w-5 h-5" />
                     <span className="text-sm font-medium">Restriction</span>
+                    {analysisMode === "fast" && (
+                      <span className="text-[10px] text-white/40">
+                        Accurate only
+                      </span>
+                    )}
                   </button>
                 </div>
+                {analysisMode === "fast" && analysisType === "restriction" && (
+                  <p className="text-[10px] text-amber-400/60 mt-2">
+                    ⚠️ Switching to Accurate mode for restriction analysis
+                  </p>
+                )}
               </div>
 
               {/* Sequence Type Selection */}
@@ -595,9 +694,27 @@ export default function BioGenomeAnalytics() {
               {/* Restriction Enzymes */}
               {analysisType === "restriction" && (
                 <div className="mb-6">
-                  <label className="text-xs font-semibold text-white/40 uppercase tracking-wider mb-3 block">
-                    Restriction Enzymes
-                  </label>
+                  <div className="flex items-center justify-between mb-3">
+                    <label className="text-xs font-semibold text-white/40 uppercase tracking-wider">
+                      Restriction Enzymes
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={selectAllEnzymes}
+                        className="text-[10px] text-indigo-400 hover:text-indigo-300 transition-colors font-medium uppercase tracking-wider"
+                      >
+                        Select All
+                      </button>
+                      {selectedEnzymes.length > 0 && (
+                        <button
+                          onClick={clearSelectedEnzymes}
+                          className="text-[10px] text-white/40 hover:text-white transition-colors font-medium uppercase tracking-wider"
+                        >
+                          Clear
+                        </button>
+                      )}
+                    </div>
+                  </div>
                   <div className="max-h-48 overflow-y-auto space-y-1.5 pr-1 custom-scrollbar">
                     {availableEnzymes?.map((enzyme) => (
                       <div
@@ -736,6 +853,7 @@ export default function BioGenomeAnalytics() {
                             result={data as AnalysisResult}
                             sequenceType={sequenceType}
                             copyToClipboard={copyToClipboard}
+                            analysisMode={analysisMode}
                           />
                         )}
                         {analysisType === "restriction" && data && (
@@ -840,14 +958,16 @@ function BasicAnalysisResults({
   result,
   sequenceType,
   copyToClipboard,
+  analysisMode,
 }: {
   result: AnalysisResult;
   sequenceType: SequenceType;
   copyToClipboard: (text: string, label: string) => void;
+  analysisMode: "fast" | "accurate";
 }) {
   return (
     <div className="space-y-6">
-      {/* Key Metrics Grid */}
+      {/* Key Metrics Grid - Always shown */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           icon={Dna}
@@ -924,33 +1044,56 @@ function BasicAnalysisResults({
           }
         />
 
-        {sequenceType === "dna" && result?.reverseComplement && (
-          <SequenceSection
-            title="Reverse Complement"
-            sequence={result.reverseComplement}
-            icon={Dna}
-            color="green"
-            onCopy={() =>
-              copyToClipboard(result.reverseComplement, "Reverse complement")
-            }
-          />
-        )}
+        {analysisMode === "accurate" &&
+          sequenceType === "dna" &&
+          result?.reverseComplement && (
+            <SequenceSection
+              title="Reverse Complement"
+              sequence={result.reverseComplement}
+              icon={Dna}
+              color="green"
+              onCopy={() =>
+                copyToClipboard(result.reverseComplement, "Reverse complement")
+              }
+            />
+          )}
 
-        {sequenceType === "dna" && result?.transcription && (
-          <SequenceSection
-            title="Transcription (RNA)"
-            sequence={result.transcription}
-            icon={Activity}
-            color="purple"
-            onCopy={() =>
-              copyToClipboard(result.transcription, "Transcription")
-            }
-          />
+        {analysisMode === "accurate" &&
+          sequenceType === "dna" &&
+          result?.transcription && (
+            <SequenceSection
+              title="Transcription (RNA)"
+              sequence={result.transcription}
+              icon={Activity}
+              color="purple"
+              onCopy={() =>
+                copyToClipboard(result.transcription, "Transcription")
+              }
+            />
+          )}
+
+        {analysisMode === "fast" && (
+          <div className="col-span-full glass-card p-6 text-center">
+            <div className="flex flex-col items-center gap-3">
+              <div className="p-3 rounded-xl bg-indigo-500/20">
+                <Microscope className="w-6 h-6 text-indigo-400" />
+              </div>
+              <div>
+                <h4 className="text-lg font-semibold text-white mb-1">
+                  Advanced Analysis Available in Accurate Mode
+                </h4>
+                <p className="text-sm text-white/50">
+                  Switch to Accurate mode to see reverse complement,
+                  transcription, translation, and ORF detection.
+                </p>
+              </div>
+            </div>
+          </div>
         )}
       </div>
 
-      {/* Translation */}
-      {result?.translation && (
+      {/* Translation - Accurate mode only */}
+      {analysisMode === "accurate" && result?.translation && (
         <div className="glass-card p-6">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
@@ -977,72 +1120,76 @@ function BasicAnalysisResults({
         </div>
       )}
 
-      {/* Open Reading Frames */}
-      {result?.orfRegions && result.orfRegions.length > 0 && (
-        <div className="glass-card p-6">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-orange-500/20">
-                <Sparkles className="w-5 h-5 text-orange-400" />
-              </div>
-              <div>
-                <h4 className="text-lg font-semibold text-white">
-                  Open Reading Frames
-                </h4>
-                <p className="text-xs text-white/40">
-                  {result.orfRegions.length} ORFs detected
-                </p>
+      {/* Open Reading Frames - Accurate mode only */}
+      {analysisMode === "accurate" &&
+        result?.orfRegions &&
+        result.orfRegions.length > 0 && (
+          <div className="glass-card p-6">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-orange-500/20">
+                  <Sparkles className="w-5 h-5 text-orange-400" />
+                </div>
+                <div>
+                  <h4 className="text-lg font-semibold text-white">
+                    Open Reading Frames
+                  </h4>
+                  <p className="text-xs text-white/40">
+                    {result.orfRegions.length} ORFs detected
+                  </p>
+                </div>
               </div>
             </div>
-          </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            {result.orfRegions.map((orf, index) => (
-              <div key={index} className="glass-card p-5 glass-card-hover">
-                <div className="flex items-start justify-between mb-4">
-                  <div>
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-lg font-bold text-orange-400">
-                        ORF {index + 1}
-                      </span>
-                      <span className="badge badge-orange">
-                        Frame{" "}
-                        {orf?.frame > 0 ? `+${orf.frame}` : orf?.frame || "N/A"}
-                      </span>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              {result.orfRegions.map((orf, index) => (
+                <div key={index} className="glass-card p-5 glass-card-hover">
+                  <div className="flex items-start justify-between mb-4">
+                    <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-lg font-bold text-orange-400">
+                          ORF {index + 1}
+                        </span>
+                        <span className="badge badge-orange">
+                          Frame{" "}
+                          {orf?.frame > 0
+                            ? `+${orf.frame}`
+                            : orf?.frame || "N/A"}
+                        </span>
+                      </div>
+                      <div className="text-xs text-white/40">
+                        {orf?.length || 0} bp
+                      </div>
                     </div>
-                    <div className="text-xs text-white/40">
-                      {orf?.length || 0} bp
+                    <div className="text-right text-xs text-white/40">
+                      <div>Start: {orf?.start ?? "N/A"}</div>
+                      <div>End: {orf?.end ?? "N/A"}</div>
                     </div>
                   </div>
-                  <div className="text-right text-xs text-white/40">
-                    <div>Start: {orf?.start ?? "N/A"}</div>
-                    <div>End: {orf?.end ?? "N/A"}</div>
+
+                  <div className="space-y-3">
+                    <div>
+                      <div className="text-[10px] text-white/30 uppercase tracking-wider mb-1.5">
+                        DNA Sequence
+                      </div>
+                      <div className="sequence-display text-xs py-2">
+                        {orf?.sequence || "N/A"}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-[10px] text-white/30 uppercase tracking-wider mb-1.5">
+                        Protein Translation
+                      </div>
+                      <div className="sequence-display text-xs py-2 bg-orange-500/10 border-orange-500/30 text-orange-300">
+                        {orf?.translation || "N/A"}
+                      </div>
+                    </div>
                   </div>
                 </div>
-
-                <div className="space-y-3">
-                  <div>
-                    <div className="text-[10px] text-white/30 uppercase tracking-wider mb-1.5">
-                      DNA Sequence
-                    </div>
-                    <div className="sequence-display text-xs py-2">
-                      {orf?.sequence || "N/A"}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-[10px] text-white/30 uppercase tracking-wider mb-1.5">
-                      Protein Translation
-                    </div>
-                    <div className="sequence-display text-xs py-2 bg-orange-500/10 border-orange-500/30 text-orange-300">
-                      {orf?.translation || "N/A"}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
-      )}
+        )}
     </div>
   );
 }

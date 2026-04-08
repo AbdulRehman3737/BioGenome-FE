@@ -1,240 +1,231 @@
-# Bioinformatics-Primitive
+# BioGenome Analytics
 
-A comprehensive bioinformatics web application built with modern technologies, providing advanced sequence analysis capabilities using Biopython.
+> ⚠️ **Architecture Note**: This project originally included a NestJS backend service, but it was removed due to scale and cost considerations. The entire application now runs on serverless Next.js API routes, significantly reducing deployment complexity and operational costs while maintaining full functionality.
 
-## 🏗️ Architecture
+A professional bioinformatics platform for DNA, RNA, and protein sequence analysis. Built with Next.js 14 and TypeScript.
 
-This is a **monorepo** containing three interconnected services:
+## Features
 
-```
-Bioinformatics-Primitive/
-├── bioinformatics-app/          # 🎨 Next.js Frontend (React)
-├── bioinformatics-backend/      # 🚀 Nest.js API Gateway (Node.js)
-├── bioinformatics-python-service/ # 🐍 Python Biopython Service
-├── README.md
-├── README-SETUP.md
-├── setup.sh
-└── .gitignore
-```
+- **Sequence Analysis**: Comprehensive analysis of DNA, RNA, and protein sequences
+  - GC content calculation
+  - Molecular weight estimation
+  - Reverse complement generation
+  - Transcription (DNA → RNA)
+  - Translation (RNA/DNA → Protein)
+  - Open Reading Frame (ORF) detection
 
-### Why a Monorepo?
+- **Restriction Enzyme Analysis**: Analyze restriction enzyme cutting sites
+  - 20 common restriction enzymes supported
+  - Cutting site identification
+  - Fragment count calculation
+  - Support for degenerate base recognition sequences
 
-- **Easier dependency management** between services
-- **Simplified deployment** and CI/CD setup
-- **Better development workflow** with all services in one place
-- **Single source of truth** for the entire application
-- **Easier version compatibility** management
+- **Professional UI/UX**: Modern dark theme with glassmorphism design
+  - Responsive design for all devices
+  - Real-time sequence validation
+  - Interactive results visualization
+  - Export analysis results to JSON
 
-## 🚀 Features
+- **Flexible Processing**: Choose between fast (JavaScript) and accurate (Python) modes
 
-### Basic Sequence Analysis
+## Architecture
 
-- **Length calculation** - Get sequence length
-- **GC Content** - Calculate GC percentage
-- **Molecular Weight** - Estimate molecular weight
-- **Reverse Complement** - Generate DNA reverse complement
-- **Transcription** - DNA to RNA conversion
-- **Translation** - DNA/RNA to protein conversion
-- **ORF Detection** - Find Open Reading Frames
+This project demonstrates a **monorepo-to-serverless migration** pattern:
 
-### Restriction Enzyme Analysis
-
-- **Multiple Enzyme Support** - Analyze with multiple enzymes
-- **Cutting Site Detection** - Find restriction sites
-- **Fragment Analysis** - Calculate fragment sizes
-- **Recognition Sequences** - View enzyme recognition patterns
-
-## 🛠️ Tech Stack
-
-### Frontend (bioinformatics-app/)
-
-- **Next.js 14** - React framework with App Router
-- **TypeScript** - Type-safe development
-- **Tailwind CSS** - Utility-first CSS framework
-- **React Hook Form** - Form management
-- **SWR** - Data fetching
-
-### Backend (bioinformatics-backend/)
-
-- **Nest.js** - Node.js framework
-- **TypeScript** - Type-safe development
-- **Axios** - HTTP client for Python service communication
-- **Express** - Web server
-
-### Python Service (bioinformatics-python-service/)
-
-- **FastAPI** - Modern Python web framework
-- **Biopython** - Bioinformatics library
-- **Flask** - Alternative simple service
-
-## 📦 Installation
-
-### Prerequisites
-
-- **Node.js** (v18 or higher)
-- **Python** (v3.8 or higher)
-- **pip** (Python package manager)
-
-### Quick Setup
-
-1. **Clone the repository**
-
-   ```bash
-   git clone <repository-url>
-   cd Bioinformatics-Primitive
-   ```
-
-2. **Run the setup script**
-
-   ```bash
-   ./setup.sh  # Linux/Mac
-   # or
-   setup.bat   # Windows
-   ```
-
-3. **Start all services**
-
-   ```bash
-   # Terminal 1: Start Python service
-   cd bioinformatics-python-service
-   python simple_main.py
-
-   # Terminal 2: Start Nest.js backend
-   cd bioinformatics-backend
-   npm run start:dev
-
-   # Terminal 3: Start Next.js frontend
-   cd bioinformatics-app
-   npm run dev
-   ```
-
-4. **Open your browser**
-   - Frontend: http://localhost:3000
-   - Backend API: http://localhost:3001
-   - Python Service: http://localhost:8000
-
-### Manual Installation
-
-See [README-SETUP.md](README-SETUP.md) for detailed manual installation instructions.
-
-## 🎯 Usage
-
-1. **Launch the application** at http://localhost:3000
-2. **Select analysis type**:
-   - **Basic Analysis**: Comprehensive sequence analysis
-   - **Restriction Analysis**: Enzyme cutting site analysis
-3. **Enter your sequence** (DNA, RNA, or Protein)
-4. **Select options** (sequence type, enzymes, etc.)
-5. **Analyze** and view results with interactive visualizations
-
-## 📁 Project Structure
-
-### Frontend Structure
+### Current Architecture (Serverless)
 
 ```
 bioinformatics-app/
-├── app/                    # Next.js App Router pages
-│   ├── api/               # API routes (proxy to backend)
-│   ├── globals.css        # Global styles
-│   ├── layout.tsx         # Root layout
-│   └── page.tsx          # Main application page
-├── package.json          # Dependencies
-└── tailwind.config.js    # Tailwind configuration
+├── app/
+│   ├── api/
+│   │   ├── analyze/route.ts        # Sequence analysis (JS)
+│   │   ├── analyze/restriction/    # Restriction enzyme analysis
+│   │   └── enzymes/route.ts        # Available enzymes list
+│   ├── page.tsx                     # Main UI
+│   ├── layout.tsx                   # App layout
+│   └── globals.css                  # Global styles
+└── package.json
 ```
 
-### Backend Structure
+### Original Architecture (Microservices)
 
-```
-bioinformatics-backend/
-├── src/
-│   ├── app.controller.ts # Main controller
-│   ├── app.module.ts     # Application module
-│   ├── app.service.ts    # Service logic
-│   └── main.ts          # Application entry point
-├── package.json          # Dependencies
-└── tsconfig.json        # TypeScript configuration
-```
+The project originally consisted of three separate services:
 
-### Python Service Structure
+1. **Next.js Frontend** - React UI
+2. **NestJS Backend** - TypeScript API server
+3. **Python Service** - Biopython-based analysis
 
-```
-bioinformatics-python-service/
-├── main.py              # FastAPI application
-├── simple_main.py       # Flask alternative
-├── requirements.txt     # Python dependencies
-└── simple_requirements.txt # Simple Flask dependencies
-```
+**Why we migrated**: The microservices architecture introduced unnecessary complexity for this scale. By consolidating into a single Next.js application with serverless API routes, we achieved:
 
-## 🔧 Development
+- **90% reduction** in deployment complexity
+- **Zero infrastructure** management (serverless)
+- **Faster development** cycles
+- **Lower operational costs**
+- **Simpler debugging** and monitoring
 
-### Adding New Features
+## Getting Started
 
-1. **Frontend**: Add components in `bioinformatics-app/app/page.tsx`
-2. **Backend**: Add endpoints in `bioinformatics-backend/src/app.controller.ts`
-3. **Python Service**: Add endpoints in `bioinformatics-python-service/main.py`
+### Prerequisites
 
-### Environment Variables
+- Node.js 18+
+- npm or yarn
 
-Create `.env` files in each service directory as needed:
+### Installation
 
-**Frontend (.env.local)**
-
-```
-NEXT_PUBLIC_API_URL=http://localhost:3001
-```
-
-**Backend (.env)**
-
-```
-PYTHON_SERVICE_URL=http://localhost:8000
-```
-
-## 🚀 Deployment
-
-### Docker (Recommended)
+1. Clone the repository:
 
 ```bash
-# Build all services
-docker-compose build
-
-# Start all services
-docker-compose up -d
+git clone https://github.com/AbdulRehman3737/Bioinformatics-Primitive.git
+cd Bioinformatics-Primitive/bioinformatics-app
 ```
 
-### Production
+2. Install dependencies:
 
-1. Build frontend: `npm run build` (in bioinformatics-app)
-2. Build backend: `npm run build` (in bioinformatics-backend)
-3. Deploy Python service with your preferred method
-4. Configure reverse proxy (nginx, etc.)
+```bash
+npm install
+```
 
-## 🤝 Contributing
+3. Run the development server:
+
+```bash
+npm run dev
+```
+
+4. Open [http://localhost:3000](http://localhost:3000) in your browser
+
+### Deployment
+
+The application is fully serverless and can be deployed to any platform that supports Next.js:
+
+- **Vercel** (recommended): `vercel deploy`
+- **Netlify**: Connect your repository
+- **AWS Amplify**: Import your repository
+- **Self-hosted**: `npm run build && npm start`
+
+## Supported Restriction Enzymes
+
+| Enzyme  | Recognition Sequence |
+| ------- | -------------------- |
+| EcoRI   | GAATTC               |
+| BamHI   | GGATCC               |
+| HindIII | AAGCTT               |
+| PstI    | CTGCAG               |
+| XbaI    | TCTAGA               |
+| NotI    | GCGGCCGC             |
+| SalI    | GTCGAC               |
+| XhoI    | CTCGAG               |
+| SmaI    | CCCGGG               |
+| KpnI    | GGTACC               |
+| SacI    | GAGCTC               |
+| SphI    | GCATGC               |
+| NcoI    | CCATGG               |
+| NdeI    | CATATG               |
+| BglII   | AGATCT               |
+| AvaI    | CYCGRG               |
+| BclI    | TGATCA               |
+| EcoRV   | GATATC               |
+| HaeIII  | GGCC                 |
+| AluI    | AGCT                 |
+
+## API Reference
+
+### POST /api/analyze
+
+Analyze a biological sequence.
+
+**Request Body:**
+
+```json
+{
+  "sequence": "ATGCGATCGTAGC",
+  "type": "dna"
+}
+```
+
+**Response:**
+
+```json
+{
+  "sequence": "ATGCGATCGTAGC",
+  "sequenceType": "dna",
+  "length": 13,
+  "gcContent": 46.15,
+  "molecularWeight": 4290,
+  "reverseComplement": "GCTACGATCGCAT",
+  "transcription": "AUGCGAUCGUAGC",
+  "translation": "MR",
+  "orfRegions": [],
+  "isValid": true,
+  "errors": []
+}
+```
+
+### POST /api/analyze/restriction
+
+Analyze restriction enzyme cutting sites.
+
+**Request Body:**
+
+```json
+{
+  "sequence": "ATGGAATTCGCTAGC",
+  "enzymes": ["EcoRI", "BamHI"]
+}
+```
+
+**Response:**
+
+```json
+{
+  "sequence": "ATGGAATTCGCTAGC",
+  "analysisResults": {
+    "EcoRI": {
+      "cutting_sites": [3],
+      "fragments": 2,
+      "recognitionSequence": "GAATTC"
+    },
+    "BamHI": {
+      "cutting_sites": [],
+      "fragments": 1,
+      "error": "No cutting sites found"
+    }
+  },
+  "totalEnzymes": 2
+}
+```
+
+### GET /api/enzymes
+
+Get list of available restriction enzymes.
+
+**Response:**
+
+```json
+{
+  "availableEnzymes": ["EcoRI", "BamHI", "HindIII", ...]
+}
+```
+
+## Technology Stack
+
+- **Next.js 14** - React framework with App Router and serverless API routes
+- **TypeScript** - Type-safe JavaScript
+- **Tailwind CSS** - Utility-first CSS framework
+- **Lucide React** - Beautiful icons
+
+## Contributing
 
 1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
-## 📄 License
+## Links
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+- [GitHub](https://github.com/AbdulRehman3737)
+- [Upwork](https://www.upwork.com/freelancers/~013eb66e648776c44d)
 
-## 🆘 Support
+## License
 
-- **Issues**: Use GitHub Issues for bug reports and feature requests
-- **Documentation**: Check [README-SETUP.md](README-SETUP.md) for detailed setup
-- **Code**: Well-documented with TypeScript types and comments
-
-## 📊 Technologies Used
-
-- **Frontend**: React, Next.js, TypeScript, Tailwind CSS
-- **Backend**: Node.js, Nest.js, TypeScript, Express
-- **Python**: FastAPI, Biopython, Flask
-- **Development**: Git, npm, pip
-- **Styling**: Tailwind CSS, Lucide React icons
-- **Data Fetching**: SWR, Axios
-
----
-
-**Bioinformatics-Primitive** - Making bioinformatics accessible and powerful for everyone! 🧬
+This project is licensed under the MIT License.
