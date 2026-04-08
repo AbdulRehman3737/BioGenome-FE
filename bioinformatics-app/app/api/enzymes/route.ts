@@ -1,26 +1,51 @@
 import { NextResponse } from "next/server";
 
+// Fallback enzyme list in case backend is not available
+const FALLBACK_ENZYMES = [
+  "EcoRI",
+  "BamHI",
+  "HindIII",
+  "PstI",
+  "XbaI",
+  "NotI",
+  "SalI",
+  "XhoI",
+  "SmaI",
+  "KpnI",
+  "SacI",
+  "SphI",
+  "NcoI",
+  "NdeI",
+  "BglII",
+  "AvaI",
+  "BclI",
+  "EcoRV",
+  "HaeIII",
+  "AluI",
+];
+
 export async function GET() {
   try {
-    // Proxy request to the Nest.js backend
-    const response = await fetch("http://localhost:3001/api/analyze/enzymes", {
+    // Try to fetch from the NestJS backend first
+    const response = await fetch("http://localhost:3001/analyze/enzymes", {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
       },
+      signal: AbortSignal.timeout(3000), // 3 second timeout
     });
 
-    if (!response.ok) {
-      throw new Error(`Backend error: ${response.status}`);
+    if (response.ok) {
+      const data = await response.json();
+      // Handle both snake_case and camelCase responses
+      const enzymes =
+        data.availableEnzymes || data.available_enzymes || FALLBACK_ENZYMES;
+      return NextResponse.json({ availableEnzymes: enzymes });
     }
-
-    const data = await response.json();
-    return NextResponse.json(data);
   } catch (error) {
-    console.error("Error fetching enzymes:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch enzymes" },
-      { status: 500 },
-    );
+    console.log("Backend not available, using fallback enzyme list");
   }
+
+  // Return fallback enzyme list
+  return NextResponse.json({ availableEnzymes: FALLBACK_ENZYMES });
 }
